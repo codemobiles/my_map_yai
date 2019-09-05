@@ -1,6 +1,7 @@
 package com.codemobiles.mymap
 
 import android.Manifest
+import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.widget.Toast
@@ -17,11 +18,14 @@ import com.karumi.dexter.listener.PermissionDeniedResponse
 import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
+import kotlinx.android.synthetic.main.activity_maps.*
+import java.text.DecimalFormat
 
 
 class MapsActivity : AppCompatActivity() {
 
-    private val mLocationProvider: FusedLocationProviderClient? = null
+    private var mCurrentLocation: Location? = null
+    private var mLocationProvider: FusedLocationProviderClient? = null
     private val FASTEST_INTERVAL: Long = 1000
     private val UPDATE_INTERVAL: Long = 2000
     private lateinit var mGoogleApi: GoogleApiClient
@@ -30,6 +34,8 @@ class MapsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+
+        mLocationProvider = FusedLocationProviderClient(this);
 
         initMap()
     }
@@ -85,9 +91,12 @@ class MapsActivity : AppCompatActivity() {
                             val currentLocation = resut!!.lastLocation
 
                             if (currentLocation != null) {
-//                                mCurrentLocation = currentLocation
+                                mCurrentLocation = currentLocation
 //
-//                                updateLocationTextView()
+                                updateLocationTextView()
+
+                                val latLng = LatLng(mCurrentLocation!!.latitude, mCurrentLocation!!.longitude)
+                                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
 //
 //                                if (mTrackBtn.tag == R.drawable.ic_action_stop) {
 //                                    animateCamera(LatLng(currentLocation.latitude, currentLocation.longitude), 15)
@@ -123,4 +132,16 @@ class MapsActivity : AppCompatActivity() {
 
         mMap.isTrafficEnabled = true
     }
+
+    fun updateLocationTextView() {
+        if (mCurrentLocation != null) {
+            val formatter = DecimalFormat("#,###.00")
+            val lat = formatter.format(mCurrentLocation!!.getLatitude())
+            val lng = formatter.format(mCurrentLocation!!.getLongitude())
+
+            val currentLocStr = "Lat: $lat°, Long: $lng°"
+            mCurrentLocationTextView.text = currentLocStr
+        }
+    }
+
 }
