@@ -1,17 +1,24 @@
 package com.codemobiles.mymap
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.*
+import com.google.android.gms.location.places.AutocompleteFilter
+import com.google.android.gms.location.places.ui.PlaceAutocomplete
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionDeniedResponse
@@ -23,6 +30,8 @@ import java.text.DecimalFormat
 
 
 class MapsActivity : AppCompatActivity() {
+
+    private val PLACE_AUTOCOMPLETE_REQUEST_CODE: Int = 1150
 
     private var mCurrentLocation: Location? = null
     private var mLocationProvider: FusedLocationProviderClient? = null
@@ -40,6 +49,30 @@ class MapsActivity : AppCompatActivity() {
         initMap()
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if(requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE){
+            if(resultCode == Activity.RESULT_OK){
+                val result = PlaceAutocomplete.getPlace(this, data)
+
+                val markerOptions = MarkerOptions()
+                markerOptions.position(result.latLng)
+                markerOptions.title(result.name.toString())
+                markerOptions.snippet("${result.address} \n ${result.phoneNumber}")
+                markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.pin_01))
+
+                mMap.addMarker(markerOptions)
+
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(result.latLng, 18F))
+
+            }else{
+                val status = PlaceAutocomplete.getStatus(this, data)
+                showToast(status.toString())
+            }
+        }
+    }
+
     private fun initMap() {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.mMapFragment) as SupportMapFragment
@@ -48,6 +81,31 @@ class MapsActivity : AppCompatActivity() {
 
             setupMap()
             checkRuntimePermission()
+            bindEventWidget()
+        }
+    }
+
+    private fun bindEventWidget() {
+        mMapSearchBtn.setOnClickListener {
+            try {
+                val typeFilter = AutocompleteFilter
+                    .Builder()
+                    .setTypeFilter(AutocompleteFilter.TYPE_FILTER_ESTABLISHMENT)
+                    .setCountry("TH")
+                    .build()
+
+                val intent = PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_OVERLAY)
+                    .setFilter(typeFilter)
+                    .build(this@MapsActivity)
+
+                startActivityForResult(intent, PLACE_AUTOCOMPLETE_REQUEST_CODE)
+            } catch (e: Exception) {
+                Log.e("CM_Google_Search", "Exception: ${e.message}")
+            }
+        }
+
+        mMapClearBtn.setOnClickListener {
+            mMap.clear()
         }
     }
 
@@ -57,7 +115,7 @@ class MapsActivity : AppCompatActivity() {
             .withListener(object : PermissionListener {
                 override fun onPermissionGranted(response: PermissionGrantedResponse) {
                     Toast.makeText(applicationContext, "permission granted", Toast.LENGTH_LONG).show()
-                    tracking()
+                    //tracking()
                 }
 
                 override fun onPermissionDenied(response: PermissionDeniedResponse) {

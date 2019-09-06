@@ -18,7 +18,7 @@
             <ImageView
                 android:layout_width="150dp"
                 android:layout_height="match_parent"
-                android:src="#0277BD" />
+                android:src="@drawable/banner" />
 
             <ImageView
                 android:id="@+id/mTrackBtn"
@@ -28,9 +28,8 @@
                 android:layout_alignParentRight="true"
                 android:layout_marginBottom="8dp"
                 android:layout_marginRight="16dp"
-                android:src="#BD028E"
+                android:src="@drawable/ic_action_stop"
                 />
-
         </RelativeLayout>
 
     </androidx.appcompat.widget.Toolbar>
@@ -47,7 +46,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:src="#2E7D32" />
+            android:src="@drawable/ic_action_search" />
 
         <View
             android:layout_width="1dp"
@@ -59,9 +58,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:src="#D84315" />
-
-
+            android:src="@drawable/ic_action_delete" />
 
     </LinearLayout>
 
