@@ -49,8 +49,8 @@ class MapsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_maps)
 
         mLocationProvider = FusedLocationProviderClient(this);
-
         initMap()
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -65,11 +65,9 @@ class MapsActivity : AppCompatActivity() {
                 markerOptions.title(result.name.toString())
                 markerOptions.snippet("${result.address} \n ${result.phoneNumber}")
                 markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.pin_01))
-
                 mMap.addMarker(markerOptions)
 
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(result.latLng, 18F))
-
             } else {
                 val status = PlaceAutocomplete.getStatus(this, data)
                 showToast(status.toString())
@@ -121,6 +119,17 @@ class MapsActivity : AppCompatActivity() {
                     Toast.makeText(applicationContext, "permission granted", Toast.LENGTH_LONG)
                         .show()
                     //tracking()
+
+
+                    mMap.isMyLocationEnabled = true
+
+                    mLocationProvider!!.lastLocation
+                        .addOnSuccessListener { location : Location? ->
+                            location?.let {
+                                mCurrentLocation = location
+                            }
+                        }
+
                 }
 
                 override fun onPermissionDenied(response: PermissionDeniedResponse) {
@@ -234,6 +243,13 @@ class MapsActivity : AppCompatActivity() {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             startActivity(intent)
         }
+
+        mMap.setOnInfoWindowLongClickListener {
+            startActivity(Intent(applicationContext, StreetViewActivity::class.java)
+                .putExtra("lat", it.position.latitude)
+                .putExtra("lng", it.position.longitude))
+        }
+
     }
 
 
