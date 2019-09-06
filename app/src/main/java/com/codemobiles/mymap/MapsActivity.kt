@@ -4,9 +4,11 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.common.api.GoogleApiClient
@@ -18,6 +20,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.PermissionToken
@@ -26,6 +29,7 @@ import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
 import kotlinx.android.synthetic.main.activity_maps.*
+import kotlinx.android.synthetic.main.custom_info.view.*
 import java.text.DecimalFormat
 
 
@@ -52,8 +56,8 @@ class MapsActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if(requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE){
-            if(resultCode == Activity.RESULT_OK){
+        if (requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK) {
                 val result = PlaceAutocomplete.getPlace(this, data)
 
                 val markerOptions = MarkerOptions()
@@ -66,7 +70,7 @@ class MapsActivity : AppCompatActivity() {
 
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(result.latLng, 18F))
 
-            }else{
+            } else {
                 val status = PlaceAutocomplete.getStatus(this, data)
                 showToast(status.toString())
             }
@@ -114,7 +118,8 @@ class MapsActivity : AppCompatActivity() {
             .withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
             .withListener(object : PermissionListener {
                 override fun onPermissionGranted(response: PermissionGrantedResponse) {
-                    Toast.makeText(applicationContext, "permission granted", Toast.LENGTH_LONG).show()
+                    Toast.makeText(applicationContext, "permission granted", Toast.LENGTH_LONG)
+                        .show()
                     //tracking()
                 }
 
@@ -153,7 +158,10 @@ class MapsActivity : AppCompatActivity() {
 //
                                 updateLocationTextView()
 
-                                val latLng = LatLng(mCurrentLocation!!.latitude, mCurrentLocation!!.longitude)
+                                val latLng = LatLng(
+                                    mCurrentLocation!!.latitude,
+                                    mCurrentLocation!!.longitude
+                                )
                                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
 //
 //                                if (mTrackBtn.tag == R.drawable.ic_action_stop) {
@@ -189,7 +197,45 @@ class MapsActivity : AppCompatActivity() {
         mMap.mapType = GoogleMap.MAP_TYPE_HYBRID
 
         mMap.isTrafficEnabled = true
+
+        //--------------------------
+        mMap.setInfoWindowAdapter(object : GoogleMap.InfoWindowAdapter {
+            override fun getInfoContents(marker: Marker?): View? {
+                return null
+            }
+
+            override fun getInfoWindow(marker: Marker): View {
+                val view = layoutInflater.inflate(R.layout.custom_info, null)
+
+                if (marker.title != null && marker.title != "") {
+                    view.info_window_title.text = marker.title
+                    view.info_window_title.visibility = View.VISIBLE // VISIBLE, INVISIBLE, GONE
+                } else {
+                    view.info_window_title.visibility = View.GONE
+                }
+
+                val formatter = DecimalFormat("#,###.00")
+                val lat = "${formatter.format(marker.position.latitude)}°"
+                val lng = "${formatter.format(marker.position.longitude)}°"
+
+                view.info_window_position.text = "$lat, $lng"
+
+                return view
+            }
+        })
+
+        mMap.setOnInfoWindowClickListener {
+            marker ->
+            val startString = "${mCurrentLocation!!.latitude},${mCurrentLocation!!.longitude}"
+            val destString = "${marker.position.latitude},${marker.position.longitude}"
+
+            val url = "http://maps.google.com/maps?saddr=$startString&daddr=$destString"
+
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(intent)
+        }
     }
+
 
     fun updateLocationTextView() {
         if (mCurrentLocation != null) {
